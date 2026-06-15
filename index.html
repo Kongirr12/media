@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>คลังสื่อการเรียนรู้</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* =========================================
+           1. CORE VARIABLES & BASE STYLES
+           ========================================= */
+        :root {
+            --primary-color: #8b1538; 
+            --secondary-color: #e11d48; 
+            --bg-color: #fcfafb; 
+            --card-radius: 12px;
+            --primary-rgba: rgba(139, 21, 56, 0.3); 
+            --primary-light-rgba: rgba(139, 21, 56, 0.05); 
+        }
+    
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: var(--bg-color);
+            color: #2d1b20; 
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+    
+        /* =========================================
+           2. COMPONENTS
+           ========================================= */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: var(--card-radius);
+            box-shadow: 0 8px 32px rgba(139, 21, 56, 0.06); 
+        }
+    
+        .dashboard-card { border-radius: var(--card-radius); border: none; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .dashboard-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px var(--primary-rgba) !important; }
+    
+        .resource-card { border: none; background: #fff; border-radius: var(--card-radius); transition: all 0.3s ease; cursor: pointer; height: 100%; overflow: hidden; border: 1px solid rgba(139, 21, 56, 0.05); }
+        .resource-card:hover { transform: translateY(-4px); box-shadow: 0 8px 25px var(--primary-rgba); }
+        .resource-card .card-img-top { height: 180px; object-fit: cover; transition: transform 0.4s ease; }
+        .resource-card:hover .card-img-top { transform: scale(1.05); }
+    
+        .table-hover tbody tr:hover { background-color: var(--primary-light-rgba); }
+        .table thead th { font-weight: 500; border-bottom: 2px solid #e2d5d8; color: var(--primary-color); }
+    
+        /* =========================================
+           3. UPLOAD & PREVIEW SYSTEM
+           ========================================= */
+        .upload-drop-zone {
+            border: 2px dashed #fca5a5; 
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            background-color: #ffffff;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s;
+        }
+        .upload-drop-zone:hover, .upload-drop-zone.dragover { border-color: var(--primary-color); background-color: var(--primary-light-rgba); }
+        .upload-drop-zone i { font-size: 2.5rem; color: var(--secondary-color); margin-bottom: 10px; }
+        .upload-drop-zone p { margin: 0; color: #704b54; font-size: 0.95rem; }
+    
+        .upload-preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; margin-top: 15px; }
+        .preview-item { position: relative; border-radius: 8px; overflow: hidden; aspect-ratio: 1; border: 1px solid #f1e4e6; background: #fff; }
+        .preview-item img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .preview-item .remove-btn { 
+            position: absolute; top: 4px; right: 4px; background: #ef4444; border: 2px solid #2d1b20; color: white; border-radius: 50%; width: 26px; height: 26px; padding: 0; margin: 0; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .preview-item .remove-btn:hover { transform: scale(1.15); background: #f87171; }
+        .preview-item .remove-btn i { font-size: 22px; margin-top: 12px; }
+        
+        .preview-item .file-name { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(89, 13, 36, 0.85); color: white; font-size: 10px; padding: 4px 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+    
+        /* =========================================
+           4. MODALS & UTILS
+           ========================================= */
+        .modal-dialog-scrollable .modal-body { overflow-y: auto; max-height: 70vh; scrollbar-width: thin; padding: 1rem; }
+        .loader-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(36, 12, 18, 0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(4px); }
+        
+        .btn-fab { position: fixed !important; bottom: 80px !important; right: 30px !important; width: 60px; height: 60px; z-index: 1080 !important; background-color: var(--primary-color); border-color: var(--primary-color); box-shadow: 0 4px 15px rgba(139, 21, 56, 0.4); }
+        .btn-fab:hover { background-color: #6a0e29; border-color: #6a0e29; transform: scale(1.1); transition: all 0.2s ease; }
+        
+        .object-fit-cover { object-fit: cover; }
+        
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: #fca5a5; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary-color); }
+    
+        /* =========================================
+           5. CAROUSEL & MEDIA OVERLAYS
+           ========================================= */
+        .carousel-item { height: 500px; background-color: #1f080d; } 
+        @media (max-width: 768px) { .carousel-item { height: 300px; } }
+    
+        #carouselExample .carousel-control-prev, #carouselExample .carousel-control-next {
+            width: 50px !important; height: 50px !important; top: 50% !important; bottom: auto !important; transform: translateY(-50%); background-color: rgba(139, 21, 56, 0.5) !important; border-radius: 50%; margin: 0 15px; opacity: 0.8 !important; z-index: 1060; display: flex !important; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,0.4); transition: all 0.3s;
+        }
+        #carouselExample .carousel-control-prev:hover, #carouselExample .carousel-control-next:hover { background-color: var(--primary-color) !important; opacity: 1 !important; transform: translateY(-50%) scale(1.1); }
+        .carousel-control-prev-icon, .carousel-control-next-icon { width: 20px; height: 20px; background-color: transparent !important; }
+        .carousel-item iframe, .carousel-item img, .carousel-item video { object-fit: contain; background: #1f080d; }
+    
+        .media-overlay-group { position: absolute !important; top: 20px !important; left: 20px !important; right: auto !important; bottom: auto !important; z-index: 1070 !important; width: auto !important; height: auto !important; display: flex !important; align-items: center; gap: 10px; pointer-events: none; transform: none !important; }
+        .media-overlay-group > * { pointer-events: auto; }
+    
+        .media-info-badge { background-color: var(--primary-color); color: white; padding: 6px 14px; line-height: 1.5; border-radius: 30px; font-size: 0.9rem; font-weight: 500; backdrop-filter: blur(4px); white-space: nowrap; box-shadow: 0 4px 6px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.2); }
+        .media-info-badge.bg-warning { background-color: #fbbf24 !important; color: #2d1b20; border: 1px solid #f59e0b; }
+        
+        .btn-popout { background: rgba(255,255,255,0.95); color: var(--primary-color); border: none; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; text-decoration: none; box-shadow: 0 4px 10px rgba(139, 21, 56, 0.2); cursor: pointer; }
+        .btn-popout:hover { transform: scale(1.15); background: var(--primary-color); color: #fff; box-shadow: 0 6px 15px var(--primary-rgba); }
+    
+        /* =========================================
+           6. FOOTER CREDIT
+           ========================================= */
+        .footer-credit {
+            background-color: var(--primary-color); 
+            color: #ffffff;
+            padding: 0.8rem 0; 
+            border-top: 3px solid var(--secondary-color); 
+            font-size: 0.85rem; 
+            box-shadow: 0 -4px 15px rgba(139, 21, 56, 0.15);
+            margin-top: auto; 
+            width: 100%;
+            position: relative;
+            z-index: 1000; 
+        }
+        .footer-credit p { margin: 0; opacity: 0.95; letter-spacing: 0.5px; }
+    </style>
+</head>
+
+<body>
+
+    <div id="loader-overlay" class="loader-overlay" style="display: none;">
+        <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;"></div>
+        <p class="mt-3 text-white fw-bold">กำลังโหลดข้อมูล...</p>
+    </div>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="#" onclick="event.preventDefault(); showMainPage()">
+                <img src="https://lh3.googleusercontent.com/d/19aXvolxpVK5GndtRSMFP6sEdl7oa5PzN" alt="Logo" width="40" height="40" class="me-2 rounded-circle border">
+                
+                <div style="line-height: 1.2;">
+                    <div class="fw-bold text-primary">คลังสื่อการเรียนรู้</div>
+                    <small class="text-muted" style="font-size: 0.75rem;">โรงเรียนมหาชัยพิทยาคาร</small>
+                </div>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item me-3" id="adminMenu" style="display:none;">
+                        <a class="nav-link fw-bold text-danger" href="#" onclick="event.preventDefault(); showAdminPage()">
+                            <i class="fa-solid fa-cog me-1"></i> จัดการระบบ
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <div id="userProfile" class="d-flex align-items-center" style="display:none;">
+                            <img id="userAvatar" src="" class="rounded-circle me-2 border" width="35" height="35" alt="User" onerror="this.style.display='none'">
+                            <div class="me-3 lh-1 text-end d-none d-sm-block">
+                                <span id="userNameDisplay" class="d-block fw-bold small">User</span>
+                                <span id="userRoleDisplay" class="d-block text-muted" style="font-size: 0.7rem;">Role</span>
+                            </div>
+                            <button class="btn btn-outline-danger btn-sm rounded-pill px-3" onclick="logout()">
+                                <i class="fa-solid fa-sign-out-alt"></i>
+                            </button>
+                        </div>
+                        <button id="btnLoginNav" class="btn btn-primary rounded-pill px-4" onclick="openLoginModal()">
+                            <i class="fa-solid fa-sign-in-alt me-1"></i> เข้าสู่ระบบ
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-4" id="mainPage">
+
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm h-100 dashboard-card bg-primary text-white">
+                    <div class="card-body position-relative overflow-hidden">
+                        <div class="h2 fw-bold mb-0" id="count-total">0</div>
+                        <small class="opacity-75">สื่อทั้งหมด</small>
+                        <i class="fa-solid fa-book position-absolute end-0 bottom-0 m-2 opacity-25 fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm h-100 dashboard-card bg-success text-white">
+                    <div class="card-body position-relative overflow-hidden">
+                        <div class="h2 fw-bold mb-0" id="count-creators">0</div>
+                        <small class="opacity-75">ผู้ผลิตสื่อ</small>
+                        <i class="fa-solid fa-users position-absolute end-0 bottom-0 m-2 opacity-25 fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm h-100 dashboard-card bg-warning text-white">
+                    <div class="card-body position-relative overflow-hidden">
+                        <div class="h2 fw-bold mb-0" id="count-subjects">0</div>
+                        <small class="opacity-75">รายวิชา</small>
+                        <i class="fa-solid fa-shapes position-absolute end-0 bottom-0 m-2 opacity-25 fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm h-100 dashboard-card bg-info text-white">
+                    <div class="card-body position-relative overflow-hidden">
+                        <div class="h2 fw-bold mb-0" id="count-types">0</div>
+                        <small class="opacity-75">ประเภทสื่อ</small>
+                        <i class="fa-solid fa-video position-absolute end-0 bottom-0 m-2 opacity-25 fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn btn-primary w-100 mb-3 d-md-none shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filterPanel" aria-expanded="false" aria-controls="filterPanel">
+            <i class="fa-solid fa-search me-2"></i> ค้นหาและตัวกรอง
+        </button>
+
+        <div id="filterPanel" class="card border-0 shadow-sm mb-4 glass-panel collapse d-md-block">
+            <div class="card-body p-3">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted mb-1">ค้นหา</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0">
+                                <i class="fa-solid fa-search text-muted"></i>
+                            </span>
+                            <input type="text" id="searchName" class="form-control border-start-0 border-end-0" placeholder="ชื่อสื่อ, ผู้ผลิต...">
+                            <button class="btn bg-white border border-start-0 text-muted" type="button" id="btnClearSearch" style="display:none; z-index: 4;">
+                                <i class="fa-solid fa-times"></i>
+                            </button>
+                            <button class="btn btn-primary" type="button" id="btnSearch" style="z-index: 5;">
+                                ค้นหา
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted mb-1">รายวิชา</label>
+                        <select id="filterSubject" class="form-select"><option value="">ทั้งหมด</option></select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted mb-1">ระดับชั้น</label>
+                        <select id="filterGrade" class="form-select"><option value="">ทั้งหมด</option></select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted mb-1">ประเภทสื่อ</label>
+                        <select id="filterType" class="form-select"><option value="">ทั้งหมด</option></select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted mb-1">เรียงลำดับ</label>
+                        <select id="sortOrder" class="form-select">
+                            <option value="newest">ใหม่สุด</option>
+                            <option value="oldest">เก่าสุด</option>
+                            <option value="name_asc">ชื่อ (ก-ฮ)</option>
+                            <option value="name_desc">ชื่อ (ฮ-ก)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="btn-group w-100" role="group">
+                            <button type="button" class="btn btn-outline-primary active" id="btnGrid" onclick="toggleView('grid')">
+                                <i class="fa-solid fa-th-large"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" id="btnTable" onclick="toggleView('table')">
+                                <i class="fa-solid fa-list"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="contentGrid" class="row g-3"></div>
+
+        <div id="contentTable" class="card border-0 shadow-sm overflow-hidden" style="display:none;">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 80px;">รูปปก</th>
+                            <th>ชื่อสื่อการเรียนรู้</th>
+                            <th>รายวิชา</th>
+                            <th>ระดับชั้น</th>
+                            <th>ประเภท</th>
+                            <th>ผู้ผลิต</th>
+                            <th style="width: 100px;" class="text-end">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="emptyState" class="text-center py-5 d-none">
+            <i class="fa-solid fa-box-open fa-3x text-muted mb-3 opacity-50"></i>
+            <p class="text-muted">ไม่พบข้อมูลสื่อการเรียนรู้</p>
+        </div>
+
+        <nav aria-label="Page navigation" id="paginationControls" class="mt-4" style="display:none;">
+            <ul class="pagination justify-content-center mb-2" id="paginationList"></ul>
+            <div class="text-center text-muted small">
+                แสดงหน้า <span id="currentPageDisplay" class="fw-bold">1</span> จาก <span id="totalPagesDisplay">1</span> (ทั้งหมด <span id="totalItemsDisplay">0</span> รายการ)
+            </div>
+        </nav>
+    </div>
+
+    <div class="container my-4" id="adminPage" style="display:none;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold text-dark"><i class="fa-solid fa-cogs"></i> จัดการระบบ</h4>
+            <button class="btn btn-outline-secondary rounded-pill" onclick="showMainPage()">
+                <i class="fa-solid fa-arrow-left me-1"></i> กลับหน้าหลัก
+            </button>
+        </div>
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom-0 pt-3">
+                <ul class="nav nav-tabs card-header-tabs" id="adminTab" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active fw-medium" data-bs-toggle="tab" data-bs-target="#tab-resources">
+                            <i class="fa-solid fa-layer-group me-1"></i> จัดการสื่อ
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-medium" data-bs-toggle="tab" data-bs-target="#tab-users">
+                            <i class="fa-solid fa-users-cog me-1"></i> จัดการผู้ใช้
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-medium" data-bs-toggle="tab" data-bs-target="#tab-masters">
+                            <i class="fa-solid fa-list-check me-1"></i> จัดการตัวเลือก
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-medium" data-bs-toggle="tab" data-bs-target="#tab-general">
+                            <i class="fa-solid fa-sliders me-1"></i> ทั่วไป
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card-body tab-content bg-white rounded-bottom p-4">
+                
+                <div class="tab-pane fade show active" id="tab-resources">
+                    <div class="alert alert-light border py-2 small mb-3">
+                        <i class="fa-solid fa-info-circle text-primary me-1"></i> แอดมินสามารถแก้ไขและลบสื่อได้ที่นี่
+                    </div>
+                    <div id="adminResourceTable" class="table-responsive"></div>
+                </div>
+
+                <div class="tab-pane fade" id="tab-users">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">จัดการผู้ใช้งาน</h5>
+                        <button class="btn btn-primary btn-sm rounded-pill px-3" onclick="openAddUserModal()">
+                            <i class="fa-solid fa-plus me-1"></i> เพิ่มผู้ใช้
+                        </button>
+                    </div>
+                    <div id="adminUserTable" class="table-responsive"></div>
+                </div>
+
+                <div class="tab-pane fade" id="tab-masters">
+                    <h5 class="fw-bold mb-4">จัดการตัวเลือก Dropdown</h5>
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="card h-100 border-0 bg-light">
+                                <div class="card-header border-0 bg-transparent fw-bold mt-2">รายวิชา</div>
+                                <div class="card-body">
+                                    <ul class="list-group list-group-flush bg-transparent mb-3" id="adminSubjectList" style="max-height: 300px; overflow-y: auto;"></ul>
+                                    <div class="input-group">
+                                        <input type="text" id="newSubject" class="form-control form-control-sm" placeholder="เพิ่มรายการใหม่...">
+                                        <button class="btn btn-primary btn-sm" onclick="addMaster('Subjects', 'newSubject')">เพิ่ม</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card h-100 border-0 bg-light">
+                                <div class="card-header border-0 bg-transparent fw-bold mt-2">ระดับชั้น</div>
+                                <div class="card-body">
+                                    <ul class="list-group list-group-flush bg-transparent mb-3" id="adminGradeList" style="max-height: 300px; overflow-y: auto;"></ul>
+                                    <div class="input-group">
+                                        <input type="text" id="newGrade" class="form-control form-control-sm" placeholder="เพิ่มรายการใหม่...">
+                                        <button class="btn btn-primary btn-sm" onclick="addMaster('Grades', 'newGrade')">เพิ่ม</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card h-100 border-0 bg-light">
+                                <div class="card-header border-0 bg-transparent fw-bold mt-2">ประเภทสื่อ</div>
+                                <div class="card-body">
+                                    <ul class="list-group list-group-flush bg-transparent mb-3" id="adminTypeList" style="max-height: 300px; overflow-y: auto;"></ul>
+                                    <div class="input-group">
+                                        <input type="text" id="newType" class="form-control form-control-sm" placeholder="เพิ่มรายการใหม่...">
+                                        <button class="btn btn-primary btn-sm" onclick="addMaster('Types', 'newType')">เพิ่ม</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="tab-general">
+                    <h5 class="fw-bold mb-3">การตั้งค่าทั่วไป</h5>
+                    <form id="settingsForm" onsubmit="submitSettings(event)">
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Google Drive Folder ID สำหรับรูปภาพ</label>
+                            <input type="text" name="DriveFolderId" id="settingDriveFolderId" class="form-control" placeholder="วาง Folder ID ที่นี่...">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">จำนวนรายการต่อหน้า (Page Limit)</label>
+                            <input type="number" name="PageLimit" id="settingPageLimit" class="form-control" placeholder="ค่าเริ่มต้น: 20" min="5" max="100">
+                            <div class="form-text">กำหนดจำนวนสื่อที่จะแสดงในแต่ละหน้า (บันทึกลง Cell B3)</div>
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary px-4"><i class="fa-solid fa-save me-1"></i> บันทึก</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn btn-primary rounded-circle shadow-lg position-fixed bottom-0 end-0 m-4 d-flex align-items-center justify-content-center btn-fab" onclick="openAddModal()">
+        <i class="fa-solid fa-plus fa-lg"></i>
+    </button>
+
+    <div class="modal fade" id="resourceModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <form id="resourceForm" onsubmit="submitResource(event)">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title"><i class="fa-solid fa-folder-plus me-2"></i>เพิ่มสื่อการเรียนรู้</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="creator" id="formCreator">
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label class="form-label fw-medium">ชื่อสื่อ *</label>
+                                <input type="text" name="name" class="form-control" required placeholder="ระบุชื่อสื่อ...">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-medium">URL</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa-solid fa-link"></i></span>
+                                    <input type="url" name="url" class="form-control" placeholder="https://...">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">รายวิชา</label>
+                                <select name="subject" class="form-select" id="formSubject" required></select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">ประเภท</label>
+                                <select name="type" class="form-select" id="formType" required></select>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-medium">ระดับชั้น</label>
+                                <div id="formGrades" class="border rounded p-3 bg-light d-flex flex-wrap gap-3" style="max-height: 150px; overflow-y: auto;"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">รูปปก (ไฟล์เดียว)</label>
+                                <div id="drop-zone-cover" class="upload-drop-zone">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                                    <p>เลือกไฟล์</p>
+                                    <input type="file" name="coverFile" id="inputCover" class="d-none" accept="image/*">
+                                    <div id="preview-cover" class="upload-preview-grid"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">อัลบั้มรูป (หลายไฟล์)</label>
+                                <div id="drop-zone-album" class="upload-drop-zone">
+                                    <i class="fa-solid fa-images"></i>
+                                    <p>เลือกหลายไฟล์</p>
+                                    <input type="file" name="albumFiles[]" id="inputAlbum" class="d-none" accept="image/*" multiple>
+                                    <div id="preview-album" class="upload-preview-grid"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-medium">คำอธิบาย</label>
+                                <textarea name="description" class="form-control" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                        <button type="submit" class="btn btn-primary px-4">บันทึก</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editResourceModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <form id="editResourceForm" onsubmit="submitEditResource(event)">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title"><i class="fa-solid fa-edit me-2"></i>แก้ไขสื่อการเรียนรู้</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="id" id="editResId">
+                        <input type="hidden" name="creator" id="editResCreator">
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label class="form-label fw-medium">ชื่อสื่อ *</label>
+                                <input type="text" name="name" id="editResName" class="form-control" required>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-medium">URL</label>
+                                <input type="url" name="url" id="editResUrl" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">รายวิชา</label>
+                                <select name="subject" class="form-select" id="editResSubject" required></select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">ประเภท</label>
+                                <select name="type" class="form-select" id="editResType" required></select>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-medium">ระดับชั้น</label>
+                                <div id="editResGrades" class="border rounded p-3 bg-light d-flex flex-wrap gap-3" style="max-height: 150px; overflow-y: auto;"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">เปลี่ยนปก</label>
+                                <div id="drop-zone-edit-cover" class="upload-drop-zone">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                                    <p>อัปโหลดใหม่</p>
+                                    <input type="file" name="coverFile" id="inputEditCover" class="d-none" accept="image/*">
+                                    <div id="preview-edit-cover" class="upload-preview-grid"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">เพิ่มรูปอัลบั้ม</label>
+                                <div id="drop-zone-edit-album" class="upload-drop-zone">
+                                    <i class="fa-solid fa-images"></i>
+                                    <p>เพิ่มรูป</p>
+                                    <input type="file" name="albumFiles[]" id="inputEditAlbum" class="d-none" accept="image/*" multiple>
+                                    <div id="preview-edit-album" class="upload-preview-grid"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-medium">คำอธิบาย</label>
+                                <textarea name="description" id="editResDesc" class="form-control" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                        <button type="submit" class="btn btn-warning px-4">อัปเดต</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="loginModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg mt-4" style="border-radius: 1.25rem;">
+                <div class="modal-header border-0 pb-0 position-relative justify-content-center">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow" style="width: 76px; height: 76px; position: absolute; top: -38px; border: 4px solid #fff;">
+                        <i class="fa-solid fa-user-lock fa-xl"></i>
+                    </div>
+                </div>
+                <div class="modal-body text-center p-4 p-sm-5 pt-5 mt-2">
+                    <h4 class="fw-bold mb-4 text-primary">เข้าสู่ระบบ</h4>
+                    <div class="form-floating mb-3">
+                        <input type="text" id="loginUsername" class="form-control rounded-pill px-4" placeholder="Username">
+                        <label class="px-4 text-muted">Username</label>
+                    </div>
+                    <div class="form-floating mb-4">
+                        <input type="password" id="loginPassword" class="form-control rounded-pill px-4" placeholder="Password">
+                        <label class="px-4 text-muted">Password</label>
+                    </div>
+                    <button class="btn btn-primary btn-lg w-100 rounded-pill shadow-sm mb-3" onclick="submitLogin()">เข้าสู่ระบบ</button>
+                    <button class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">ยกเลิก</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="viewModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 overflow-hidden shadow">
+                <div class="modal-body p-0">
+                    <div class="row g-0 h-100">
+                        <div class="col-lg-8 bg-dark d-flex align-items-center justify-content-center min-vh-50 position-relative">
+                            <div id="carouselContainer" class="w-100 h-100">
+                                <div id="carouselExample" class="carousel slide h-100" data-bs-ride="false">
+                                    <div class="carousel-inner h-100 d-flex align-items-center" id="carouselInner"></div>
+                                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExample" data-bs-slide="prev">
+                                        <span class="carousel-control-prev-icon bg-dark rounded-circle p-3 bg-opacity-50"></span>
+                                    </button>
+                                    <button class="carousel-control-next" type="button" data-bs-target="#carouselExample" data-bs-slide="next">
+                                        <span class="carousel-control-next-icon bg-dark rounded-circle p-3 bg-opacity-50"></span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 p-4 d-flex flex-column bg-white">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <span id="viewBadge" class="badge bg-primary fs-6"></span>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <h4 id="viewTitle" class="fw-bold mb-3 text-break"></h4>
+                            <div class="mb-3">
+                                <span id="viewType" class="badge bg-secondary me-1"></span>
+                                <span id="viewGrade" class="badge bg-info text-dark"></span>
+                            </div>
+                            <div class="d-flex align-items-center mb-3 text-muted">
+                                <i class="fa-solid fa-user-circle fa-lg me-2"></i>
+                                <span id="viewCreator"></span>
+                            </div>
+                            <div class="flex-grow-1 overflow-auto mb-3 border-top pt-3">
+                                <p id="viewDesc" class="text-secondary" style="white-space: pre-wrap;"></p>
+                            </div>
+                            <div class="mt-auto">
+                                <a id="viewLink" href="#" target="_blank" class="btn btn-primary w-100 py-2 shadow-sm">
+                                    <i class="fa-solid fa-external-link-alt me-2"></i> เปิดดูสื่อฉบับเต็ม
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="userModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">เพิ่มผู้ใช้งาน</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="userForm" onsubmit="submitUser(event)">
+                        <div class="mb-3"><label class="form-label">Username</label><input type="text" id="userUsername" class="form-control" required></div>
+                        <div class="mb-3"><label class="form-label">Password</label><input type="password" id="userPassword" class="form-control" required></div>
+                        <div class="mb-3"><label class="form-label">ชื่อ-สกุล</label><input type="text" id="userName" class="form-control" required></div>
+                        <div class="mb-3"><label class="form-label">Role</label>
+                            <select id="userRole" class="form-select">
+                                <option value="User">User</option><option value="Admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="mb-3"><label class="form-label">URL รูป</label><input type="text" id="userImage" class="form-control"></div>
+                        <button type="submit" class="btn btn-primary w-100">บันทึก</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">แก้ไขผู้ใช้งาน</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editUserForm" onsubmit="submitEditUser(event)">
+                        <input type="hidden" id="editUserOldUsername">
+                        <div class="mb-3"><label class="form-label">Username</label><input type="text" id="editUserUsername" class="form-control" required></div>
+                        <div class="mb-3"><label class="form-label">Password</label><input type="text" id="editUserPassword" class="form-control" required></div>
+                        <div class="mb-3"><label class="form-label">ชื่อ-สกุล</label><input type="text" id="editUserName" class="form-control" required></div>
+                        <div class="mb-3"><label class="form-label">Role</label>
+                            <select id="editUserRole" class="form-select">
+                                <option value="User">User</option><option value="Admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="mb-3"><label class="form-label">URL รูป</label><input type="text" id="editUserImage" class="form-control"></div>
+                        <button type="submit" class="btn btn-warning w-100">อัปเดต</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer-credit">
+        <div class="container text-center">
+            <p class="mb-0">
+                &copy; 2026 ระบบคลังสื่อการเรียนรู้ <br class="d-block d-sm-none">
+                <span class="fw-bold px-sm-2">พัฒนาโดย ครูก้องนที อุ่นเจริญ</span>
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        var STORAGE_KEY_USER = 'my_school_media_session';
+        var IMG_PLACEHOLDER_COVER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgNDAwIDIwMCI+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNlOWVjZWYiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiM2Yzc1N2QiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5vIENvdmVyPC90ZXh0Pjwvc3ZnPg==";
+        var IMG_PLACEHOLDER_USER = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzNSIgaGVpZ2h0PSIzNSIgdmlld0JveD0iMCAwIDM1IDM1Ij48cmVjdCB3aWR0aD0iMzUiIGhlaWdodD0iMzUiIGZpbGw9IiNlOWVjZWYiLz48cGF0aCBkPSJNMTKr6EeffXNDX9kzYZyr5KsyfSB1v9GuZYx1IDQuNSA0LjVzLTIuMDE1IDQuNS00LjUgNC41LTQuNS0yLjAxNS00LjUtNC41IDIuMDE1LTQuNSA0LjUtNC41em0wIDljNC45NyAwIDkgNC4wMyA5IDl2MS41aC0xOHYtMS41YzAtNC45NyA0LjAzLTkgOS05eiIgZmlsbD0iIzZjNzU3ZCIvPjwvc3ZnPg==";
+        var IMG_PLACEHOLDER_THUMB = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDUwIDQwIj48cmVjdCB3aWR0aD0iNTAiIGhlaWdodD0iNDAiIGZpbGw9IiNlOWVjZWYiLz48L3N2Zz4=";
+    
+        // 🔴🔴🔴 สำคัญ: นำ URL Web App ของคุณมาใส่ที่บรรทัดด้านล่างนี้ 🔴🔴🔴
+        const API_URL = "https://script.google.com/macros/s/AKfycbyUsuwA4HdKTZ1dDGaAAXvOjgq1WEG8ZLl_j8RfDFH8s07GphBx33irZfxeaMfG0Oa7/exec";
+    
+        var allData = { resources: [], users: [], favorites: [], subjects: [], grades: [], types: [], settings: {} };
+        var currentUser = null;
+        var addFormFiles = { cover: null, album: [] };
+        var editFormFiles = { cover: null, album: [] };
+        var filesToDelete = { cover: false, album: [] };
+        var currentPage = 1, totalPages = 1, totalItems = 0, itemsPerPage = 20;
+        var isFetching = false;
+    
+        function callBackend(action, payloadData, onSuccess, onFailure) {
+            fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: action, ...payloadData })
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if(onSuccess) onSuccess(data);
+            })
+            .catch(function(err) {
+                if(onFailure) onFailure(err);
+                else { showLoader(false); Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบ API_URL', 'error'); }
+            });
+        }
+    
+        function showLoader(isLoading, text) {
+            var loader = document.getElementById('loader-overlay');
+            if (loader) {
+                loader.style.display = isLoading ? 'flex' : 'none';
+                var p = loader.querySelector('p');
+                if (p) p.innerText = text || 'กำลังโหลดข้อมูล...';
+            }
+        }
+    
+        window.handleMediaError = function (imgElement, fileId) {
+            imgElement.onerror = null; imgElement.style.display = 'none';
+            var iframe = document.createElement('iframe');
+            iframe.src = "https://drive.google.com/file/d/" + fileId + "/preview";
+            iframe.className = "d-block w-100 h-100 border-0";
+            iframe.setAttribute('allow', 'autoplay');
+            imgElement.parentElement.appendChild(iframe);
+        };
+    
+        function sanitizeId(str) { return String(str).replace(/[^a-zA-Z0-9ก-๙]/g, '_'); }
+    
+        function getUserName(userId) {
+            if (!userId) return '-';
+            var user = (allData.users || []).find(function (u) { return String(u.id) === String(userId) || String(u.username) === String(userId); });
+            return user ? user.name : userId;
+        }
+    
+        function normalizeData(arr) {
+            if (!Array.isArray(arr)) return [];
+            return arr.map(function (item) {
+                var newItem = {};
+                for (var key in item) newItem[key.toString().trim().toLowerCase().replace(/\s+/g, '_')] = item[key];
+                return newItem;
+            });
+        }
+    
+        function getFileIcon(mimeType, fileName) {
+            if (!mimeType) mimeType = '';
+            if (mimeType.startsWith('image/')) return 'fa-image text-primary';
+            if (mimeType.startsWith('video/')) return 'fa-file-video text-danger';
+            if (mimeType === 'application/pdf') return 'fa-file-pdf text-danger';
+            if (fileName && fileName.match(/\.(doc|docx)$/i)) return 'fa-file-word text-primary';
+            if (fileName && fileName.match(/\.(xls|xlsx)$/i)) return 'fa-file-excel text-success';
+            if (fileName && fileName.match(/\.(ppt|pptx)$/i)) return 'fa-file-powerpoint text-warning';
+            return 'fa-file text-secondary';
+        }
+    
+        function parseAlbumData(data) {
+            if (!data) return [];
+            try {
+                var parsed = (typeof data === 'string' && (data.startsWith('[') || data.startsWith('{'))) ? JSON.parse(data) : data;
+                if (Array.isArray(parsed)) {
+                    return parsed.map(function (item) {
+                        if (typeof item === 'object' && item !== null && item.id) return item;
+                        if (typeof item === 'string' && item.trim() !== "") return { id: item.trim(), type: 'image/jpeg', name: 'Legacy File' };
+                        return null;
+                    }).filter(function (x) { return x !== null; });
+                } else if (typeof data === 'string' && data.includes(',')) {
+                    return data.split(',').map(function (s) { return { id: s.trim(), type: 'image/jpeg', name: 'Legacy File' }; });
+                }
+                return [];
+            } catch (e) { console.error("Parse Error:", e); return []; }
+        }
+    
+        function populateDropdown(elementId, list, isFilter) {
+            var select = document.getElementById(elementId);
+            if (!select) return;
+            select.innerHTML = isFilter ? '<option value="">ทั้งหมด</option>' : '<option value="" disabled selected>เลือก...</option>';
+            if (list && Array.isArray(list)) {
+                list.forEach(function (item) {
+                    if (item) {
+                        var option = document.createElement('option');
+                        option.value = item; option.textContent = item; select.appendChild(option);
+                    }
+                });
+            }
+        }
+    
+        function populateCheckboxes(containerId, list, inputName) {
+            var container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            if (list && Array.isArray(list)) {
+                list.forEach(function (item) {
+                    if (item) {
+                        var div = document.createElement('div'); div.className = 'form-check';
+                        var id = containerId + '_chk_' + sanitizeId(item);
+                        div.innerHTML = '<input class="form-check-input" type="checkbox" name="' + inputName + '" value="' + item + '" id="' + id + '"><label class="form-check-label" for="' + id + '">' + item + '</label>';
+                        container.appendChild(div);
+                    }
+                });
+            }
+        }
+    
+        function toggleView(viewType) {
+            var grid = document.getElementById('contentGrid'); var table = document.getElementById('contentTable');
+            var btnGrid = document.getElementById('btnGrid'); var btnTable = document.getElementById('btnTable');
+            if (viewType === 'grid') {
+                if (grid) grid.style.removeProperty('display'); if (table) table.style.display = 'none';
+                if (btnGrid) btnGrid.classList.add('active'); if (btnTable) btnTable.classList.remove('active');
+            } else {
+                if (grid) grid.style.display = 'none'; if (table) table.style.display = 'block';
+                if (btnGrid) btnGrid.classList.remove('active'); if (btnTable) btnTable.classList.add('active');
+            }
+        }
+    
+        function showMainPage() { document.getElementById('mainPage').style.display = 'block'; document.getElementById('adminPage').style.display = 'none'; window.scrollTo(0, 0); }
+    
+        function showAdminPage() {
+            if (!currentUser) return Swal.fire('Access Denied', 'กรุณาเข้าสู่ระบบ', 'error');
+            document.getElementById('mainPage').style.display = 'none'; document.getElementById('adminPage').style.display = 'block';
+            var isAdmin = (currentUser.role === 'Admin');
+            var tabMasters = document.querySelector('button[data-bs-target="#tab-masters"]').parentElement;
+            var tabGeneral = document.querySelector('button[data-bs-target="#tab-general"]').parentElement;
+            tabMasters.style.display = isAdmin ? '' : 'none'; tabGeneral.style.display = isAdmin ? '' : 'none';
+            var btnAddUser = document.querySelector('#tab-users button[onclick="openAddUserModal()"]');
+            if (btnAddUser) btnAddUser.style.display = isAdmin ? 'inline-block' : 'none';
+    
+            renderAdminResourceTable(allData.resources); renderAdminUserTable();
+            if (isAdmin) renderAdminMasters(); window.scrollTo(0, 0);
+        }
+    
+        function renderAdminResourceTable(data) {
+            var c = document.getElementById('adminResourceTable'); if (!c) return;
+            var displayData = data || [];
+            if (currentUser && currentUser.role !== 'Admin') {
+                displayData = displayData.filter(function (r) { return String(r.creator) === String(currentUser.id) || String(r.creator) === String(currentUser.username); });
+            }
+            if (displayData.length === 0) { c.innerHTML = '<div class="text-center text-muted py-4">ไม่พบข้อมูลในหน้านี้</div>'; return; }
+    
+            var h = ['<table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>ชื่อสื่อ</th><th>รายวิชา</th><th>ผู้สร้าง</th><th class="text-end">จัดการ</th></tr></thead><tbody>'];
+            displayData.forEach(function (r) {
+                h.push('<tr><td class="fw-bold">' + r.name + '</td><td>' + (r.subject || '-') + '</td><td><small>' + getUserName(r.creator) + '</small></td>' +
+                    '<td class="text-end"><button class="btn btn-sm btn-warning me-1" onclick="openEditResourceModal(\'' + r.id + '\')"><i class="fa fa-pencil"></i></button>' +
+                    '<button class="btn btn-sm btn-danger" onclick="deleteResource(\'' + r.id + '\')"><i class="fa fa-trash"></i></button></td></tr>');
+            });
+            h.push('</tbody></table>'); c.innerHTML = h.join('');
+        }
+    
+        function renderAdminUserTable() {
+            var c = document.getElementById('adminUserTable'); if (!c) return;
+            var displayUsers = allData.users || []; var isAdmin = currentUser && currentUser.role === 'Admin';
+            if (!isAdmin) displayUsers = displayUsers.filter(function (u) { return String(u.username) === String(currentUser.username); });
+    
+            var h = ['<table class="table table-bordered table-striped align-middle"><thead class="table-light"><tr><th>Username</th><th>ชื่อ</th><th>Role</th><th>จัดการ</th></tr></thead><tbody>'];
+            displayUsers.forEach(function (u) {
+                var allowDelete = isAdmin && u.username !== 'admin' && u.username !== currentUser.username;
+                h.push('<tr><td>' + u.username + '</td><td>' + u.name + '</td><td>' + u.role + '</td>' +
+                    '<td><button class="btn btn-sm btn-warning me-1" onclick="openEditUserModal(\'' + u.username + '\')">แก้ไข</button>' +
+                    (allowDelete ? '<button class="btn btn-sm btn-danger" onclick="deleteUser(\'' + u.username + '\')">ลบ</button>' : '') + '</td></tr>');
+            });
+            h.push('</tbody></table>'); c.innerHTML = h.join('');
+        }
+    
+        function renderAdminMasters() {
+            ['Subjects', 'Grades', 'Types'].forEach(function (t) {
+                var el = document.getElementById('admin' + t.slice(0, -1) + 'List'); if (!el) return;
+                var list = t === 'Subjects' ? allData.subjects : t === 'Grades' ? allData.grades : allData.types;
+                var h = list.map(function (i) {
+                    return '<li class="list-group-item d-flex justify-content-between bg-transparent">' + i + '<div><button class="btn btn-sm text-warning" onclick="editMaster(\'' + t + '\',\'' + i + '\')"><i class="fa fa-pencil"></i></button><button class="btn btn-sm text-danger" onclick="deleteMaster(\'' + t + '\',\'' + i + '\')"><i class="fa fa-times"></i></button></div></li>';
+                }).join('');
+                el.innerHTML = h || '<li class="list-group-item text-center">ไม่มีข้อมูล</li>';
+            });
+        }
+    
+        function updateDashboard() {
+            var setTxt = function (id, txt) { var el = document.getElementById(id); if (el) el.innerText = txt; };
+            var stats = allData.stats || {};
+            setTxt('count-total', stats.totalResources || totalItems || 0); setTxt('count-creators', stats.uniqueCreators || 0);
+            setTxt('count-subjects', stats.totalSubjects || 0); setTxt('count-types', stats.totalTypes || 0);
+        }
+    
+        function renderResources(data) {
+            var grid = document.getElementById('contentGrid'); var table = document.getElementById('tableBody'); var empty = document.getElementById('emptyState');
+            if (!grid || !table) return;
+            var list = data || allData.resources || [];
+            var myFavorites = [];
+            if (currentUser && allData.favorites) {
+                var uid = String(currentUser.id || currentUser.username);
+                myFavorites = allData.favorites.filter(function (f) { return String(f.userid) === uid; }).map(function (f) { return String(f.resourceid); });
+            }
+    
+            var gridHTML = [], tableHTML = [];
+            if (list.length === 0) { if (empty) empty.classList.remove('d-none'); } 
+            else {
+                if (empty) empty.classList.add('d-none');
+                list.forEach(function (item) {
+                    var imgUrl = item.cover_id ? "https://lh3.googleusercontent.com/d/" + item.cover_id + "=w400" : IMG_PLACEHOLDER_COVER;
+                    var creatorDisplay = getUserName(item.creator); var viewCount = item.views || 0;
+                    var isFav = myFavorites.includes(String(item.id)); var heartClass = isFav ? 'fa-solid text-danger' : 'fa-regular text-secondary';
+                    var favBtn = '<button class="btn btn-light btn-sm rounded-circle position-absolute top-0 end-0 m-2 shadow-sm" onclick="event.stopPropagation(); toggleFavorite(\'' + item.id + '\', this)" style="width:32px;height:32px;z-index:5;"><i class="' + heartClass + ' fa-heart"></i></button>';
+    
+                    gridHTML.push('<div class="col-lg-3 col-md-4 col-sm-6"><div class="card h-100 resource-card shadow-sm" onclick="openViewModal(\'' + item.id + '\')">' + favBtn + '<img src="' + imgUrl + '" class="card-img-top" loading="lazy" onerror="this.src=\'' + IMG_PLACEHOLDER_COVER + '\'"><div class="card-body"><div class="d-flex justify-content-between mb-2"><span class="badge bg-primary bg-opacity-10 text-primary rounded-pill text-truncate" style="max-width: 50%">' + (item.subject || '-') + '</span><span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill text-truncate" style="max-width: 45%">' + (item.type || '-') + '</span></div><h6 class="card-title fw-bold text-truncate" title="' + item.name + '">' + item.name + '</h6><div class="small text-muted mb-2 text-truncate"><i class="fa fa-layer-group me-1"></i>' + (item.grade || '-') + '</div><div class="d-flex align-items-center mt-2 border-top pt-2"><i class="fa fa-user-circle me-1 text-muted"></i><small class="text-muted text-truncate w-100">' + creatorDisplay + '</small><small class="text-muted ms-auto d-flex align-items-center"><i class="fa fa-eye me-1"></i>' + viewCount + '</small></div></div></div></div>');
+                    tableHTML.push('<tr><td><img src="' + imgUrl + '" width="50" height="40" class="rounded object-fit-cover" onerror="this.src=\'' + IMG_PLACEHOLDER_THUMB + '\'"></td><td class="fw-bold text-primary cursor-pointer" onclick="openViewModal(\'' + item.id + '\')">' + item.name + '</td><td><span class="badge bg-light text-dark border">' + (item.subject || '-') + '</span></td><td>' + (item.grade || '-') + '</td><td>' + (item.type || '-') + '</td><td><small>' + creatorDisplay + '</small></td><td class="text-end"><button class="btn btn-sm btn-info text-white" onclick="openViewModal(\'' + item.id + '\')"><i class="fa fa-eye"></i> ' + viewCount + '</button></td></tr>');
+                });
+            }
+            grid.innerHTML = gridHTML.join(''); table.innerHTML = tableHTML.join('');
+            renderAdminResourceTable(list); renderPagination();
+        }
+    
+        function renderPagination() {
+            var nav = document.getElementById('paginationControls'); var ul = document.getElementById('paginationList');
+            if (totalItems <= 0) { if (nav) nav.style.display = 'none'; return; }
+            if (nav) nav.style.display = 'block';
+            document.getElementById('currentPageDisplay').innerText = currentPage; document.getElementById('totalPagesDisplay').innerText = totalPages; document.getElementById('totalItemsDisplay').innerText = totalItems;
+            if (!ul) return; ul.innerHTML = '';
+            ul.appendChild(Object.assign(document.createElement('li'), { className: 'page-item ' + (currentPage === 1 ? 'disabled' : ''), innerHTML: '<a class="page-link" href="#" onclick="event.preventDefault(); goToPage(' + (currentPage - 1) + ')">«</a>' }));
+            var startPage = Math.max(1, currentPage - 2); var endPage = Math.min(totalPages, startPage + 4);
+            if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+            if (startPage > 1) { ul.innerHTML += '<li class="page-item"><a class="page-link" href="#" onclick="event.preventDefault(); goToPage(1)">1</a></li>'; if (startPage > 2) ul.innerHTML += '<li class="page-item disabled"><span class="page-link">...</span></li>'; }
+            for (var i = startPage; i <= endPage; i++) {
+                ul.appendChild(Object.assign(document.createElement('li'), { className: 'page-item ' + (i === currentPage ? 'active' : ''), innerHTML: '<a class="page-link" href="#" onclick="event.preventDefault(); goToPage(' + i + ')">' + i + '</a>' }));
+            }
+            if (endPage < totalPages) { if (endPage < totalPages - 1) ul.innerHTML += '<li class="page-item disabled"><span class="page-link">...</span></li>'; ul.innerHTML += '<li class="page-item"><a class="page-link" href="#" onclick="event.preventDefault(); goToPage(' + totalPages + ')">' + totalPages + '</a></li>'; }
+            ul.appendChild(Object.assign(document.createElement('li'), { className: 'page-item ' + (currentPage === totalPages ? 'disabled' : ''), innerHTML: '<a class="page-link" href="#" onclick="event.preventDefault(); goToPage(' + (currentPage + 1) + ')">»</a>' }));
+        }
+    
+        function fetchResources(page) {
+            if (isFetching) return; isFetching = true; showLoader(true, "กำลังค้นหา...");
+            var sort = document.getElementById('sortOrder').value; var onlyFavs = (sort === 'favorites'); var myFavIds = [];
+            if (onlyFavs && currentUser && allData.favorites) {
+                var uid = String(currentUser.id || currentUser.username);
+                myFavIds = allData.favorites.filter(function (f) { return String(f.userid) === uid; }).map(function (f) { return String(f.resourceid); });
+            }
+            var params = {
+                page: page, limit: itemsPerPage, search: document.getElementById('searchName').value,
+                subject: document.getElementById('filterSubject').value, grade: document.getElementById('filterGrade').value,
+                type: document.getElementById('filterType').value, sort: sort, onlyFavorites: onlyFavs, favorites: myFavIds
+            };
+            callBackend('searchResources', { params: params }, function(res) {
+                isFetching = false; showLoader(false);
+                allData.resources = normalizeData(res.data);
+                currentPage = res.pagination.page; totalPages = res.pagination.totalPages; totalItems = res.pagination.totalItems;
+                toggleClearButtonState(); renderResources();
+            }, function(e) { isFetching = false; showLoader(false); Swal.fire('Error', 'ไม่สามารถดึงข้อมูลได้: ' + e, 'error'); });
+        }
+    
+        function goToPage(p) { if (p < 1 || p > totalPages) return; fetchResources(p); }
+        function toggleClearButtonState() { var i = document.getElementById('searchName'), b = document.getElementById('btnClearSearch'); if (i && b) b.style.display = i.value.trim().length > 0 ? 'block' : 'none'; }
+    
+        function initializeUI() {
+            populateDropdown('filterSubject', allData.subjects, true); populateDropdown('filterGrade', allData.grades, true); populateDropdown('filterType', allData.types, true);
+            populateDropdown('formSubject', allData.subjects, false); populateDropdown('formType', allData.types, false); populateCheckboxes('formGrades', allData.grades, 'grades[]');
+            populateDropdown('editResSubject', allData.subjects, false); populateDropdown('editResType', allData.types, false); populateCheckboxes('editResGrades', allData.grades, 'grades[]');
+    
+            var sortSelect = document.getElementById('sortOrder');
+            if (sortSelect && !sortSelect.querySelector('option[value="favorites"]')) {
+                var optFav = document.createElement('option'); optFav.value = 'favorites'; optFav.textContent = '⭐ รายการโปรด'; sortSelect.appendChild(optFav);
+            }
+            var inputDrive = document.getElementById('settingDriveFolderId'); if (inputDrive && allData.settings.DriveFolderId) inputDrive.value = allData.settings.DriveFolderId;
+            var inputLimit = document.getElementById('settingPageLimit'); if (allData.settings.PageLimit) { itemsPerPage = parseInt(allData.settings.PageLimit); if (inputLimit) inputLimit.value = itemsPerPage; }
+            updateDashboard(); renderResources(); renderAdminMasters(); updateUserInterface();
+        }
+    
+        function updateUserInterface() {
+            var els = { login: document.getElementById('btnLoginNav'), profile: document.getElementById('userProfile'), admin: document.getElementById('adminMenu') };
+            if (currentUser) {
+                els.login.style.display = 'none'; els.profile.style.setProperty('display', 'flex', 'important');
+                document.getElementById('userNameDisplay').innerText = currentUser.name || currentUser.username; document.getElementById('userRoleDisplay').innerText = currentUser.role;
+                if (document.getElementById('userAvatar')) document.getElementById('userAvatar').src = currentUser.image || IMG_PLACEHOLDER_USER;
+                els.admin.style.display = 'block';
+            } else { els.login.style.display = 'block'; els.profile.style.setProperty('display', 'none', 'important'); els.admin.style.display = 'none'; }
+        }
+    
+        function checkAutoLogin() { try { var stored = localStorage.getItem(STORAGE_KEY_USER); if (stored) { currentUser = JSON.parse(stored); updateUserInterface(); } } catch (e) { localStorage.removeItem(STORAGE_KEY_USER); } }
+    
+        function loadAllData() {
+            showLoader(true);
+            callBackend('getAllData', { params: { page: 1 } }, function (data) {
+                if (!data) data = {};
+                allData = {
+                    resources: normalizeData(data.resources), users: normalizeData(data.users), favorites: normalizeData(data.favorites),
+                    subjects: data.subjects || [], grades: data.grades || [], types: data.types || [], settings: data.settings || {}, stats: data.stats || {}
+                };
+                if (data.pagination) { currentPage = data.pagination.page; totalPages = data.pagination.totalPages; totalItems = data.pagination.totalItems; itemsPerPage = data.pagination.limit; }
+                if (currentUser) { var validUser = allData.users.find(function (u) { return String(u.id) === String(currentUser.id) || String(u.username) === String(currentUser.username); }); if (validUser) { currentUser = validUser; localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser)); } }
+                initializeUI(); showLoader(false);
+            });
+        }
+    
+        function setupEventListeners() {
+            var s = document.getElementById('searchName'), bs = document.getElementById('btnSearch'), bc = document.getElementById('btnClearSearch');
+            if (s) { s.addEventListener('input', toggleClearButtonState); s.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); fetchResources(1); } }); }
+            if (bs) bs.addEventListener('click', function () { fetchResources(1); });
+            if (bc) bc.addEventListener('click', function () { if (s) { s.value = ''; toggleClearButtonState(); fetchResources(1); } });
+            ['filterSubject', 'filterGrade', 'filterType', 'sortOrder'].forEach(function (id) { var el = document.getElementById(id); if (el) el.addEventListener('change', function () { fetchResources(1); }); });
+        }
+    
+        document.addEventListener('DOMContentLoaded', function () { checkAutoLogin(); loadAllData(); setupEventListeners(); setupDropzoneHandlers(); });
+    
+        function toggleFavorite(resourceId, btnElement) {
+            if (!currentUser) return Swal.fire('แจ้งเตือน', 'กรุณาเข้าสู่ระบบเพื่อบันทึกรายการโปรด', 'warning');
+            var icon = btnElement.querySelector('i'); var isCurrentlyFav = icon.classList.contains('fa-solid');
+            icon.className = isCurrentlyFav ? 'fa-regular fa-heart text-secondary' : 'fa-solid fa-heart text-danger';
+    
+            callBackend('toggleFavorite', { userId: currentUser.id || currentUser.username, resourceId: resourceId }, function(res) {
+                if (res.status) {
+                    allData.favorites = normalizeData(res.favorites);
+                    if (document.getElementById('sortOrder').value === 'favorites') fetchResources(currentPage); else renderResources();
+                }
+            });
+        }
+    
+        function setupDropzoneHandlers() {
+            setupDropzone('drop-zone-cover', 'inputCover', 'add', 'cover'); setupDropzone('drop-zone-album', 'inputAlbum', 'add', 'album');
+            setupDropzone('drop-zone-edit-cover', 'inputEditCover', 'edit', 'cover'); setupDropzone('drop-zone-edit-album', 'inputEditAlbum', 'edit', 'album');
+        }
+    
+        function setupDropzone(zoneId, inputId, mode, type) {
+            var zone = document.getElementById(zoneId); var input = document.getElementById(inputId); if (!zone || !input) return;
+            zone.addEventListener('click', function () { if (type === 'cover' && document.getElementById(mode === 'add' ? 'preview-cover' : 'preview-edit-cover').children.length > 0) return; input.click(); });
+            zone.addEventListener('dragover', function (e) { e.preventDefault(); zone.classList.add('dragover'); });
+            zone.addEventListener('dragleave', function (e) { e.preventDefault(); zone.classList.remove('dragover'); });
+            zone.addEventListener('drop', function (e) { e.preventDefault(); zone.classList.remove('dragover'); handleFileSelection(e.dataTransfer.files, mode, type); });
+            input.addEventListener('change', function (e) { handleFileSelection(e.target.files, mode, type); e.target.value = null; });
+        }
+    
+        function updateCoverZoneUI(mode) {
+            var zone = document.getElementById(mode === 'add' ? 'drop-zone-cover' : 'drop-zone-edit-cover');
+            var preview = document.getElementById(mode === 'add' ? 'preview-cover' : 'preview-edit-cover');
+            if (!zone || !preview) return;
+            var hasFile = preview.children.length > 0;
+            var icon = zone.querySelector('i'), text = zone.querySelector('p');
+            if (icon) icon.style.display = hasFile ? 'none' : ''; if (text) text.style.display = hasFile ? 'none' : '';
+            zone.style.border = hasFile ? 'none' : ''; zone.style.backgroundColor = hasFile ? 'transparent' : '';
+            hasFile ? zone.classList.add('filled') : zone.classList.remove('filled');
+        }
+    
+        function handleFileSelection(files, mode, type) {
+            if (!files || files.length === 0) return;
+            if (type === 'cover' && document.getElementById(mode === 'add' ? 'preview-cover' : 'preview-edit-cover').children.length > 0) { return Swal.fire('แจ้งเตือน', 'กรุณาลบรูปปกเดิมออกก่อนอัปโหลดใหม่', 'warning'); }
+            var targetState = mode === 'add' ? addFormFiles : editFormFiles;
+            for (var i = 0; i < files.length; i++) { files[i].previewUrl = URL.createObjectURL(files[i]); if (type === 'cover') targetState.cover = files[i]; else targetState.album.push(files[i]); }
+            renderStagedPreviews(mode === 'add' ? (type === 'cover' ? 'preview-cover' : 'preview-album') : (type === 'cover' ? 'preview-edit-cover' : 'preview-edit-album'), mode, type);
+        }
+    
+        function renderStagedPreviews(containerId, mode, type) {
+            var container = document.getElementById(containerId); if (!container) return;
+            var targetState = mode === 'add' ? addFormFiles : editFormFiles; var files = type === 'cover' ? (targetState.cover ? [targetState.cover] : []) : targetState.album;
+            var existingElements = container.querySelectorAll('.preview-item.existing-file'); container.innerHTML = ''; existingElements.forEach(function (el) { container.appendChild(el); });
+            files.forEach(function (file, index) {
+                var div = document.createElement('div'); div.className = 'preview-item new-file';
+                var content = file.type.startsWith('image/') ? '<img src="' + file.previewUrl + '" class="object-fit-cover">' : (file.type.startsWith('video/') ? '<video src="' + file.previewUrl + '" controls class="object-fit-cover" style="width:100%; height:100%; background:#000;"></video>' : '<div class="d-flex align-items-center justify-content-center h-100 bg-light text-secondary"><i class="fa-solid ' + getFileIcon(file.type, file.name) + ' fa-2x"></i></div>');
+                div.innerHTML = content + '<button type="button" class="remove-btn" onclick="event.stopPropagation(); removeStagedFile(\'' + mode + '\', \'' + type + '\', ' + index + ')"><i class="fa fa-times"></i></button><div class="file-name">' + file.name + '</div>'; container.appendChild(div);
+            });
+            if (type === 'cover') updateCoverZoneUI(mode);
+        }
+    
+        window.removeStagedFile = function (mode, type, index) { var targetState = mode === 'add' ? addFormFiles : editFormFiles; if (type === 'cover') targetState.cover = null; else targetState.album.splice(index, 1); renderStagedPreviews(mode === 'add' ? (type === 'cover' ? 'preview-cover' : 'preview-album') : (type === 'cover' ? 'preview-edit-cover' : 'preview-edit-album'), mode, type); };
+        window.removeExistingFile = function (btn, type, fileId) {
+            var container = btn.closest('.upload-preview-grid'); var mode = container.id.includes('edit') ? 'edit' : 'add'; btn.closest('.preview-item').remove();
+            if (type === 'cover') { filesToDelete.cover = true; updateCoverZoneUI(mode); } else if (type === 'album') filesToDelete.album.push(fileId);
+        };
+    
+        function clearFormState(mode) {
+            if (mode === 'add') { addFormFiles = { cover: null, album: [] }; document.getElementById('preview-cover').innerHTML = ''; document.getElementById('preview-album').innerHTML = ''; updateCoverZoneUI('add'); }
+            else { editFormFiles = { cover: null, album: [] }; filesToDelete = { cover: false, album: [] }; document.getElementById('preview-edit-cover').innerHTML = ''; document.getElementById('preview-edit-album').innerHTML = ''; updateCoverZoneUI('edit'); }
+        }
+    
+        function getBase64(file) {
+            return new Promise(function (resolve, reject) {
+                var reader = new FileReader(); reader.readAsDataURL(file);
+                reader.onload = function () { resolve(reader.result); }; reader.onerror = function (error) { reject(error); };
+            });
+        }
+    
+        async function uploadFileViaAPI(file, subFolderName, onProgress) {
+            onProgress(50); 
+            var base64Data = await getBase64(file);
+            var payload = { action: 'uploadFile', filename: file.name, mimeType: file.type || 'application/octet-stream', base64Data: base64Data, subFolderName: subFolderName || null };
+            var response = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+            var result = await response.json();
+            onProgress(100);
+            if (result.status === true || result.id) { return result.data || result; } 
+            else { throw new Error(result.message || "Upload Failed"); }
+        }
+    
+        async function performUploadsAndSubmit(payload, fileList, submitFunc) {
+            try {
+                showLoader(true, "กำลังเตรียมอัปโหลดไฟล์ผ่านระบบใหม่...");
+                var uploadedFiles = []; var totalFiles = fileList.length;
+                var albumFolderName = "Album_" + payload.name + "_" + new Date().getTime();
+                
+                for (var i = 0; i < totalFiles; i++) {
+                    var file = fileList[i];
+                    var isCoverImg = (payload.isCover) || (payload.hasCoverFile && i === 0);
+                    var targetFolder = isCoverImg ? null : albumFolderName; 
+                    
+                    var uploadResult = await uploadFileViaAPI(file, targetFolder, function (percent) {
+                        showLoader(true, 'กำลังอัปโหลดไฟล์ ' + (i + 1) + '/' + totalFiles + ': ' + file.name + ' (' + percent + '%)');
+                    });
+                    uploadedFiles.push({ id: uploadResult.id, name: uploadResult.name, type: uploadResult.type });
+                }
+                if (payload.isCover) { payload.coverFile = uploadedFiles[0]; }
+                else { if (payload.hasCoverFile) payload.coverFile = uploadedFiles.shift(); payload.newAlbumFiles = uploadedFiles; }
+                
+                showLoader(true, "กำลังบันทึกข้อมูล..."); submitFunc(payload);
+            } catch (e) { showLoader(false); console.error(e); Swal.fire('Upload Error', 'เกิดข้อผิดพลาดในการอัปโหลด: ' + e.message, 'error'); }
+        }
+    
+        function afterSubmit(res) {
+            showLoader(false);
+            if (res.status === true || res.status === 'success') {
+                Swal.fire({ icon: 'success', title: 'สำเร็จ', showConfirmButton: false, timer: 1500 });
+                var modal = document.querySelector('.modal.show'); if (modal) bootstrap.Modal.getInstance(modal).hide();
+                if (res.data) {
+                    allData.users = normalizeData(res.data.users); allData.subjects = res.data.subjects || []; allData.grades = res.data.grades || []; allData.types = res.data.types || []; allData.stats = res.data.stats || {};
+                    fetchResources(currentPage); updateUserInterface(); renderAdminUserTable(); renderAdminMasters(); updateDashboard();
+                } else fetchResources(currentPage);
+            } else { Swal.fire('Error', res.message || 'เกิดข้อผิดพลาด', 'error'); }
+        }
+    
+        function openAddModal() {
+            if (!currentUser) return Swal.fire('แจ้งเตือน', 'กรุณาเข้าสู่ระบบ', 'warning').then(function (r) { if (r.isConfirmed) openLoginModal(); });
+            document.getElementById('resourceForm').reset(); document.getElementById('formCreator').value = currentUser.id || currentUser.username;
+            clearFormState('add'); new bootstrap.Modal(document.getElementById('resourceModal')).show();
+        }
+    
+        function openEditResourceModal(id) {
+            var item = (allData.resources || []).find(function (r) { return String(r.id) === String(id); });
+            if (!item) return Swal.fire('Error', 'ไม่พบข้อมูลในรายการปัจจุบัน', 'error');
+            document.getElementById('editResourceForm').reset(); clearFormState('edit');
+            document.getElementById('editResId').value = item.id; document.getElementById('editResCreator').value = item.creator; document.getElementById('editResName').value = item.name; document.getElementById('editResUrl').value = item.url; document.getElementById('editResSubject').value = item.subject; document.getElementById('editResType').value = item.type; document.getElementById('editResDesc').value = item.description;
+            var gradesArr = (item.grade || '').split(',').map(function (s) { return s.trim(); }); document.querySelectorAll('#editResGrades input[type="checkbox"]').forEach(function (chk) { chk.checked = gradesArr.includes(chk.value); });
+            if (item.cover_id) renderExistingPreviewDOM('preview-edit-cover', "https://lh3.googleusercontent.com/d/" + item.cover_id, item.cover_id, 'cover');
+            var albumData = parseAlbumData(item.album_files || item.albumfiles || item[9]); if (albumData) { albumData.forEach(function (fileObj) { if (fileObj && fileObj.id) { renderExistingPreviewDOM('preview-edit-album', fileObj, fileObj.id, 'album'); } }); }
+            new bootstrap.Modal(document.getElementById('editResourceModal')).show();
+        }
+    
+        function renderExistingPreviewDOM(containerId, fileOrUrl, id, type) {
+            var container = document.getElementById(containerId); var div = document.createElement('div'); div.className = 'preview-item existing-file';
+            var fileId, imgSrc, fileName;
+            if (typeof fileOrUrl === 'object') { fileId = fileOrUrl.id; fileName = fileOrUrl.name || 'File'; imgSrc = (fileOrUrl.type && fileOrUrl.type.startsWith('image/')) ? 'https://lh3.googleusercontent.com/d/' + fileId : null; } 
+            else { fileId = id; imgSrc = fileOrUrl; fileName = 'เดิม'; }
+            var content = imgSrc ? '<img src="' + imgSrc + '" class="object-fit-cover" onerror="this.src=\'' + IMG_PLACEHOLDER_THUMB + '\'">' : '<div class="d-flex align-items-center justify-content-center h-100 bg-light text-secondary"><i class="fa-solid fa-file fa-2x"></i></div>';
+            div.innerHTML = content + '<button type="button" class="remove-btn" onclick="event.stopPropagation(); removeExistingFile(this, \'' + (type || 'album') + '\', \'' + fileId + '\')"><i class="fa fa-times"></i></button><div class="file-name">' + fileName + '</div>';
+            container.appendChild(div); if (type === 'cover') updateCoverZoneUI(containerId.includes('edit') ? 'edit' : 'add');
+        }
+    
+        function submitResource(e) {
+            e.preventDefault();
+            var checkboxes = document.querySelectorAll('#formGrades input:checked'); if (checkboxes.length === 0) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกระดับชั้น', 'warning');
+            var form = document.getElementById('resourceForm');
+            var payload = { name: form.querySelector('[name="name"]').value, url: form.querySelector('[name="url"]').value, subject: document.getElementById('formSubject').value, type: document.getElementById('formType').value, grades: Array.from(checkboxes).map(function (cb) { return cb.value; }), description: form.querySelector('[name="description"]').value, creator: document.getElementById('formCreator').value, hasCoverFile: !!addFormFiles.cover };
+            var filesToUpload = []; if (addFormFiles.cover) filesToUpload.push(addFormFiles.cover); if (addFormFiles.album.length > 0) filesToUpload = filesToUpload.concat(addFormFiles.album);
+            if (filesToUpload.length > 0) {
+                performUploadsAndSubmit(payload, filesToUpload, function (finalPayload) {
+                    if (finalPayload.hasCoverFile && !finalPayload.newAlbumFiles) finalPayload.albumFiles = []; else finalPayload.albumFiles = finalPayload.newAlbumFiles || [];
+                    callBackend('saveResource', { payload: finalPayload }, afterSubmit);
+                });
+            } else { payload.albumFiles = []; showLoader(true); callBackend('saveResource', { payload: payload }, afterSubmit); }
+        }
+    
+        function submitEditResource(e) {
+            e.preventDefault();
+            var checkboxes = document.querySelectorAll('#editResGrades input:checked'); if (checkboxes.length === 0) return Swal.fire('แจ้งเตือน', 'กรุณาเลือกระดับชั้น', 'warning');
+            var payload = { id: document.getElementById('editResId').value, name: document.getElementById('editResName').value, url: document.getElementById('editResUrl').value, subject: document.getElementById('editResSubject').value, type: document.getElementById('editResType').value, grades: Array.from(checkboxes).map(function (cb) { return cb.value; }), description: document.getElementById('editResDesc').value, deleteCover: filesToDelete.cover, deletedAlbumFiles: filesToDelete.album, hasCoverFile: !!editFormFiles.cover };
+            var filesToUpload = []; if (editFormFiles.cover) filesToUpload.push(editFormFiles.cover); if (editFormFiles.album.length > 0) filesToUpload = filesToUpload.concat(editFormFiles.album);
+            if (filesToUpload.length > 0) {
+                performUploadsAndSubmit(payload, filesToUpload, function (finalPayload) { callBackend('editResource', { payload: finalPayload }, afterSubmit); });
+            } else { showLoader(true); callBackend('editResource', { payload: payload }, afterSubmit); }
+        }
+    
+        function openViewModal(id) {
+            var item = (allData.resources || []).find(function (r) { return String(r.id) === String(id); }); if (!item) return;
+            var setTxt = function (eid, val) { var el = document.getElementById(eid); if (el) el.innerText = val || '-'; };
+            setTxt('viewTitle', item.name); setTxt('viewBadge', item.subject); setTxt('viewType', item.type); setTxt('viewGrade', item.grade); setTxt('viewCreator', getUserName(item.creator)); setTxt('viewDesc', item.description);
+            var btnLink = document.getElementById('viewLink'), targetUrl = "#";
+            if (item.url && item.url !== "" && item.url !== "#") targetUrl = item.url; else if (item.album_folder_id && item.album_folder_id.trim() !== "") targetUrl = "https://drive.google.com/drive/folders/" + item.album_folder_id; else if (item.cover_id && item.cover_id.trim() !== "") targetUrl = "https://drive.google.com/file/d/" + item.cover_id + "/view";
+            btnLink.href = targetUrl; targetUrl === "#" ? (btnLink.classList.add('disabled'), btnLink.innerHTML = '<i class="fa-solid fa-ban me-2"></i> ไม่มีไฟล์แนบ') : (btnLink.classList.remove('disabled'), btnLink.innerHTML = '<i class="fa-solid fa-external-link-alt me-2"></i> เปิดดูสื่อฉบับเต็ม');
+            var inner = document.getElementById('carouselInner');
+            if (inner) {
+                inner.innerHTML = '';
+                item.cover_id ? inner.innerHTML += getMediaContent({ id: item.cover_id, type: 'image/jpeg', name: 'รูปปก' }, true) : inner.innerHTML += '<div class="carousel-item active h-100"><img src="' + IMG_PLACEHOLDER_COVER + '" class="d-block w-100 h-100 object-fit-contain"></div>';
+                var albumData = parseAlbumData(item.album_files || item.albumfiles || item[9]); albumData.forEach(function (fileObj, index) { if (fileObj && fileObj.id) { inner.innerHTML += getMediaContent(fileObj, (!item.cover_id && index === 0)); } });
+            }
+            new bootstrap.Modal(document.getElementById('viewModal')).show(); callBackend('incrementView', { id: id });
+        }
+    
+        function getMediaContent(fileObj, isActive) {
+            var fileId = fileObj.id; var mimeType = (fileObj.type || '').toLowerCase(); var fileName = fileObj.name || 'File';
+            var badgeHtml = mimeType.includes('pdf') ? '<span class="media-info-badge bg-danger"><i class="fa-solid fa-file-pdf"></i> PDF</span>' : (mimeType.includes('image') ? '<span class="media-info-badge bg-primary"><i class="fa-solid fa-image"></i> รูปภาพ</span>' : (mimeType.includes('video') ? '<span class="media-info-badge bg-warning text-dark"><i class="fa-solid fa-video"></i> วิดีโอ</span>' : ((mimeType.includes('word') || fileName.match(/\.doc/)) ? '<span class="media-info-badge bg-primary"><i class="fa-solid fa-file-word"></i> Word</span>' : ((mimeType.includes('sheet') || mimeType.includes('excel') || fileName.match(/\.xls/)) ? '<span class="media-info-badge bg-success"><i class="fa-solid fa-file-excel"></i> Excel</span>' : '<span class="media-info-badge bg-secondary"><i class="fa-solid fa-file"></i> ' + (fileName || 'File') + '</span>'))));
+            var contentHtml = mimeType.includes('image') ? '<img src="https://lh3.googleusercontent.com/d/' + fileId + '" class="d-block w-100 h-100 object-fit-contain" onerror="handleMediaError(this, \'' + fileId + '\')">' : '<iframe src="https://drive.google.com/file/d/' + fileId + '/preview" class="d-block w-100 h-100 border-0" allow="autoplay"></iframe>';
+            return '<div class="carousel-item ' + (isActive ? 'active' : '') + ' h-100"><div class="ratio ratio-16x9 h-100 d-flex align-items-center justify-content-center bg-dark position-relative">' + contentHtml + '<div class="media-overlay-group">' + badgeHtml + '<a href="https://drive.google.com/file/d/' + fileId + '/view" target="_blank" class="btn-popout" title="เปิดไฟล์เต็ม"><i class="fa-solid fa-arrow-up-right-from-square"></i></a></div></div></div>';
+        }
+    
+        function openLoginModal() { document.getElementById('loginUsername').value = ''; document.getElementById('loginPassword').value = ''; new bootstrap.Modal(document.getElementById('loginModal')).show(); }
+        function submitLogin() { var u = document.getElementById('loginUsername').value, p = document.getElementById('loginPassword').value; if (!u || !p) return Swal.fire('แจ้งเตือน', 'กรอกข้อมูลให้ครบ', 'warning'); showLoader(true); callBackend('loginUser', { username: u, password: p }, function(res) { showLoader(false); if(res.status) { currentUser = res.user; var normUser = {}; Object.keys(currentUser).forEach(function (k) { normUser[k.toLowerCase()] = currentUser[k]; }); currentUser = normUser; localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(currentUser)); bootstrap.Modal.getInstance(document.getElementById('loginModal')).hide(); updateUserInterface(); Swal.fire({ icon: 'success', title: 'ยินดีต้อนรับ ' + (currentUser.name || currentUser.username), toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 }); } else { Swal.fire('ผิดพลาด', res.message, 'error'); } }); }
+        function logout() { Swal.fire({ title: 'ออกจากระบบ?', icon: 'question', showCancelButton: true }).then(function (r) { if (r.isConfirmed) { currentUser = null; localStorage.removeItem(STORAGE_KEY_USER); updateUserInterface(); showMainPage(); } }); }
+        
+        function openAddUserModal() { document.getElementById('userForm').reset(); new bootstrap.Modal(document.getElementById('userModal')).show(); }
+        function submitUser(e) { e.preventDefault(); showLoader(true); callBackend('addUser', { userData: { username: document.getElementById('userUsername').value, password: document.getElementById('userPassword').value, name: document.getElementById('userName').value, role: document.getElementById('userRole').value, image: document.getElementById('userImage').value } }, afterSubmit); }
+        function openEditUserModal(username) { var user = (allData.users || []).find(function (u) { return u.username === username; }); if (!user) return; document.getElementById('editUserOldUsername').value = user.username; document.getElementById('editUserUsername').value = user.username; document.getElementById('editUserPassword').value = user.password; document.getElementById('editUserName').value = user.name; document.getElementById('editUserImage').value = user.image; var roleSelect = document.getElementById('editUserRole'); roleSelect.value = user.role; roleSelect.disabled = (currentUser && currentUser.role !== 'Admin'); new bootstrap.Modal(document.getElementById('editUserModal')).show(); }
+        function submitEditUser(e) { e.preventDefault(); showLoader(true); callBackend('editUser', { previousUsername: document.getElementById('editUserOldUsername').value, userData: { username: document.getElementById('editUserUsername').value, password: document.getElementById('editUserPassword').value, name: document.getElementById('editUserName').value, role: document.getElementById('editUserRole').value, image: document.getElementById('editUserImage').value } }, afterSubmit); }
+        function deleteUser(u) { Swal.fire({ title: 'ยืนยันลบ?', icon: 'warning', showCancelButton: true }).then(function (r) { if (r.isConfirmed) { showLoader(true); callBackend('deleteUser', { username: u }, afterSubmit); } }); }
+        function submitSettings(e) { e.preventDefault(); showLoader(true); callBackend('saveGeneralSettings', { formObject: { DriveFolderId: document.getElementById('settingsForm').querySelector('[name="DriveFolderId"]').value, PageLimit: document.getElementById('settingsForm').querySelector('[name="PageLimit"]').value } }, afterSubmit); }
+        
+        function addMaster(t, i) { var v = document.getElementById(i).value.trim(); if (v) { showLoader(true); callBackend('updateMasterData', { category: t, action: 'add', value: v, newValue: null }, function(res){ if (res && res.data) afterSubmit(res); else loadAllData(); document.getElementById(i).value = ''; }); } }
+        function deleteMaster(t, v) { Swal.fire({ title: 'ยืนยันการลบ?', text: "ต้องการลบ '" + v + "' หรือไม่?", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'ลบ' }).then(function (result) { if (result.isConfirmed) { showLoader(true, "กำลังลบข้อมูล..."); callBackend('updateMasterData', { category: t, action: 'delete', value: v, newValue: null }, function(res){ if (res && res.data) afterSubmit(res); else loadAllData(); }); } }); }
+        async function editMaster(t, o) { const result = await Swal.fire({ title: 'แก้ไข', input: 'text', inputValue: o, showCancelButton: true }); if (result.value && result.value !== o) { showLoader(true); callBackend('updateMasterData', { category: t, action: 'edit', value: o, newValue: result.value }, function(res){ if (res && res.data) afterSubmit(res); else loadAllData(); }); } }
+    </script>
+
+</body>
+</html>
